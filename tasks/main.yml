@@ -1,0 +1,82 @@
+---
+- name: Get the hostnamess
+  command: hostname
+  register: servername
+
+- name: Execute the first Linux command
+  command: cat /etc/ppstie_host_metadata.yml
+  register: first_command_result
+
+- name: Extract patch_version from the result
+  set_fact:
+    new_patch_version: "{{ (first_command_result.stdout | from_yaml).patch_version | default('Not Found') }}"
+
+- name: Display the first patch_version
+  debug:
+    var: new_patch_version
+
+- name: Extract patch_date from the result
+  set_fact:
+    new_patch_date: "{{ (first_command_result.stdout | from_yaml).patch_date | default('Not Found') }}"
+
+- name: Display the patch_date
+  debug:
+    var: new_patch_date
+
+- name: Extract harden_version from the result
+  set_fact:
+    new_harden_version: "{{ (first_command_result.stdout | from_yaml).tie_builder_playbooks_harden_version | default('Not Found') }}"
+
+- name: Display the new_harden_version
+  debug:
+    var: new_harden_version
+
+- name: Extract harden_date from the result
+  set_fact:
+    new_harden_date: "{{ (first_command_result.stdout | from_yaml).harden_date | default('Not Found') }}"
+
+- name: Execute the fifth Linux command
+  command: uptime
+  register: uptime
+
+- name: Execute the sixth Linux command
+  command: uname -r
+  register: repo_version
+
+- name: Remove existing CSV file
+  file:
+    path: /tmp/output.csv
+    state: absent
+
+
+
+#- name: Save output to CSV file on remote server
+  #lineinfile:
+    #line: "{{ servername.stdout }},{{ new_patch_version }},{{ new_patch_date }},{{ new_harden_version }},{{ new_harden_date }}"
+    #dest: /tmp/output.csv
+    #create: yes
+    
+- name: Add mappings to /etc/hosts
+  lineinfile:
+      insertafter: EOF
+      dest: /tmp/output.csv
+      line: "{{ item.0 }},{{ item.1 }},{{ item.2 }},{{ item.3 }},{{ item.4 }},{{ item.5 }},{{ item.6 }}"
+      create: yes
+
+  with_together:
+      - "{{ servername.stdout }}"
+      - "{{ new_patch_version }}"
+      - "{{ new_patch_date }}"
+      - "{{ new_harden_version }}"
+      - "{{ new_harden_date }}"
+      - "{{ uptime.stdout }}"
+      - "{{ repo_version.stdout }}"
+
+- name: Change ownership and permissions of the file
+  file:
+    path: /tmp/output.csv
+    owner: coreadm
+    group: coreadm
+    mode: '0777'
+  become: yes
+  
