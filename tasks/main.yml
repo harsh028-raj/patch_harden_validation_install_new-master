@@ -10,6 +10,12 @@
 - name: Extract patch_version from the result
   set_fact:
     new_patch_version: "{{ (first_command_result.stdout | from_yaml).patch_version | default('Not Found') }}"
+##The set_fact module in Ansible allows you to define and modify variables dynamically during playbook execution. Unlike regular variables, which are typically defined in inventory files or playbooks, set_fact lets you c
+##This module is particularly useful for customizing playbook behavior dynamically and storing intermediate results for later use.
+##In your playbook, the | from_yaml filter is used to convert a YAML-formatted string into a structured Ansible variable.
+##- first_command_result.stdout | from_yaml converts the YAML string into a dictionary.
+##- .patch_version extracts the value of the patch_version key.
+##- default('Not Found') ensures a fallback value if the key is missing.
 
 - name: Display the first patch_version
   debug:
@@ -71,6 +77,13 @@
       - "{{ new_harden_date }}"
       - "{{ uptime.stdout }}"
       - "{{ repo_version.stdout }}"
+
+  ##This line in your Ansible playbook is used within a loop to format multiple variables into a single comma-separated string. Here's how it works:
+##- item.0, item.1, item.2, etc., refer to elements from a list that is being iterated over using with_together.
+##- Each item.X corresponds to a specific variable in the loop.
+##- The result is a CSV-style entry where values are separated by commas.
+##- If with_together combines the following lists:
+
 
 - name: Change ownership and permissions of the file
   file:
